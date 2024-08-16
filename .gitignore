@@ -1,0 +1,10 @@
+venv
+.env
+**/__pycache__
+*.ipynb
+**/*.db
+**/*.cfg
+**/*.pid
+**/*.txt
+airflow/logs
+airflow/webserver_config.py
