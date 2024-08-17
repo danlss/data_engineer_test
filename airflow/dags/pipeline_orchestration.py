@@ -41,7 +41,9 @@ def task_persists_db(**kwargs):
 with DAG(
     dag_id="etl_markdown_pipeline",
     start_date=days_ago(1),
-    schedule_interval='@daily'
+    schedule_interval='@daily',
+    max_active_runs=1,  # Para garantir que apenas uma execução da DAG ocorra ao mesmo tempo
+    concurrency=5  # Limite de tasks em paralelo que podem ser executadas
 ) as dag:
 
     # Definição das tasks no Airflow
@@ -62,7 +64,6 @@ with DAG(
         python_callable=get_cotation,
         dag=dag,
     )
-    
 
     task_transformacao_trusted = PythonOperator(
         task_id='transformacao_trusted',
@@ -76,17 +77,11 @@ with DAG(
         dag=dag,
     )
 
-    # task_consolidacao_refined = PythonOperator(
-    #     task_id='consolidacao_refined',
-    #     python_callable=consolidacao_refined,
-    #     dag=dag,
-    # )
-
     task_consolidacao = PythonOperator(
         task_id='consolidacao_refined',
         python_callable=task_consolidacao_refined,
         provide_context=True,
-    dag=dag,
+        dag=dag,
     )
 
     task_salvar_csv = PythonOperator(
@@ -109,5 +104,11 @@ with DAG(
         dag=dag,
     )
     
-    # Definindo a ordem de execução das tasks
-    task_preparation_raw >> task_ingestao_raw >> task_get_cotation_trusted >> task_transformacao_trusted >> task_tables_refined >> task_consolidacao >> task_salvar_csv >> task_persistir_db >> task_salvar_markdown
+    # Definindo a ordem de execução das tasks com paralelização
+    task_preparation_raw >> task_ingestao_raw
+    task_get_cotation_trusted >> task_transformacao_trusted
+    [task_ingestao_raw, task_get_cotation_trusted] >> task_transformacao_trusted
+    task_transformacao_trusted >> [task_tables_refined, task_consolidacao]
+    task_consolidacao >> task_salvar_csv
+    [task_tables_refined, task_salvar_csv] >> task_persistir_db
+    task_persistir_db >> task_salvar_markdown
