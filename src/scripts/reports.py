@@ -135,9 +135,9 @@ def salvar_markdown():
     markdown = gerar_markdown(resultados)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    markdown_dir = os.path.join("datalake", "markdown", timestamp)
+    markdown_dir = os.path.join("datalake", "reports", timestamp)
     os.makedirs(markdown_dir, exist_ok=True)
 
-    with open(os.path.join(markdown_dir, "resultados_esperados.md"), "w") as file:
+    with open(os.path.join(markdown_dir, "resultados_analisados.md"), "w") as file:
         file.write(markdown)
 

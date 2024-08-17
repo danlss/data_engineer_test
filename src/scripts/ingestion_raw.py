@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from datetime import datetime
 import re
-from src.scripts.preparation import download_files, criar_tabelas, get_postgres_connection
+from src.scripts.preparation import download_files
 
 def extract_id_and_name(fonte_recurso):
     if pd.isna(fonte_recurso):  # Verifica se o valor é NaN
@@ -12,11 +12,15 @@ def extract_id_and_name(fonte_recurso):
         return match.group(1), match.group(2)
     else:
         return None, None
+
+def preparation():
+    directory = download_files()
+
+    return directory
     
 # Task 1: Ingestão de Dados (ETL) na Raw
 def ingestao_raw():
-    criar_tabelas()
-    directory = download_files()
+    directory = preparation()
 
     # Define o diretório para salvar os arquivos raw
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -26,10 +30,6 @@ def ingestao_raw():
     # Carrega os arquivos CSV com Pandas
     despesas = pd.read_csv(os.path.join(directory, "gdvDespesasExcel.csv"), encoding='ISO-8859-1')
     receitas = pd.read_csv(os.path.join(directory, "gdvReceitasExcel.csv"), encoding='ISO-8859-1')
-
-    # Remove qualquer coluna que seja completamente vazia ou indesejada (por exemplo, "Unnamed: 3")
-    # despesas = despesas.loc[:, despesas.columns.notna() & ~despesas.columns.str.contains('^Unnamed')]
-    # receitas = receitas.loc[:, receitas.columns.notna() & ~receitas.columns.str.contains('^Unnamed')]
 
     # Extrai o ID e o Nome da Fonte de Recurso na camada raw
     despesas[['id_fonte', 'nome_fonte']] = despesas['Fonte de Recursos'].apply(lambda x: pd.Series(extract_id_and_name(x)))

@@ -3,6 +3,14 @@ import requests
 from datetime import datetime
 import os
 
+def get_cotation():
+    # Obter cotação do dólar em 22/06/2022
+    url = "https://economia.awesomeapi.com.br/json/daily/USD-BRL/1?start_date=20220622&end_date=20220622"
+    response = requests.get(url)
+    dolar_cotacao = float(response.json()[0]['high'])
+
+    return dolar_cotacao
+
 def transformacao_trusted():
     # Define o diretório da camada raw
     raw_dir = os.path.join("datalake", "raw")
@@ -12,10 +20,7 @@ def transformacao_trusted():
     despesas = pd.read_csv(os.path.join(raw_dir, "despesas.csv"))
     receitas = pd.read_csv(os.path.join(raw_dir, "receitas.csv"))
 
-    # Obter cotação do dólar em 22/06/2022
-    url = "https://economia.awesomeapi.com.br/json/daily/USD-BRL/1?start_date=20220622&end_date=20220622"
-    response = requests.get(url)
-    dolar_cotacao = float(response.json()[0]['high'])
+    dolar_cotacao = get_cotation()
 
     # Aplica as transformações para a camada trusted
     despesas['liquidado_brl'] = despesas['Liquidado'].str.replace('.', '').str.replace(',', '.').astype(float) * dolar_cotacao

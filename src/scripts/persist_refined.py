@@ -12,8 +12,6 @@ def consolidacao_refined():
     despesas = pd.read_csv(os.path.join(trusted_dir, "trusted_despesas.csv"))
     receitas = pd.read_csv(os.path.join(trusted_dir, "trusted_receitas.csv"))
 
-    conn, cur = get_postgres_connection()
-
     # Consolidação dos dados na camada refined
     despesas_agg = despesas.groupby(['id_fonte', 'nome_fonte']).agg({'liquidado_brl': 'sum'}).reset_index()
     receitas_agg = receitas.groupby(['id_fonte', 'nome_fonte']).agg({'arrecadado_brl': 'sum'}).reset_index()
@@ -30,16 +28,40 @@ def consolidacao_refined():
     refined_dir = os.path.join("datalake", "refined", timestamp)
     os.makedirs(refined_dir, exist_ok=True)
 
+    return refined_df, refined_dir
+
+def save_csv(refined_df, refined_dir):
     # Salva os arquivos CSV na camada refined
     refined_df.to_csv(os.path.join(refined_dir, "refined_orcamento.csv"), index=False)
 
-    # Inserindo os dados refinados no banco de dados
-    for _, row in refined_df.iterrows():
-        cur.execute("""
-            INSERT INTO refined_orcamento (id_fonte_recurso, nome_fonte_recurso, total_liquidado, total_arrecadado, dt_insert) 
-            VALUES (%s, %s, %s, %s, %s)
-        """, (row['ID Fonte Recurso'], row['Nome Fonte Recurso'], row['Total Liquidado'], row['Total Arrecadado'], row['Dt_Insert']))
+def persists_db(refined_df):
+    conn, cur = get_postgres_connection()
+    
+    try:
+        # Inserindo os dados refinados no banco de dados
+        for _, row in refined_df.iterrows():
+            cur.execute("""
+                INSERT INTO refined_orcamento (id_fonte_recurso, nome_fonte_recurso, total_liquidado, total_arrecadado, dt_insert) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (row['ID Fonte Recurso'], row['Nome Fonte Recurso'], row['Total Liquidado'], row['Total Arrecadado'], row['Dt_Insert']))
+        
+        conn.commit()
+    except Exception as e:
+        print(f"Erro ao inserir dados no banco: {e}")
+        conn.rollback()
+    finally:
+        cur.close()
+        conn.close()
 
-    conn.commit()
-    cur.close()
-    conn.close()
+def main():
+    # Consolida os dados e obtém o dataframe e o diretório para salvar
+    refined_df, refined_dir = consolidacao_refined()
+
+    # Salva o CSV no diretório especificado
+    save_csv(refined_df, refined_dir)
+
+    # Persiste os dados no banco de dados
+    persists_db(refined_df)
+
+if __name__ == "__main__":
+    main()

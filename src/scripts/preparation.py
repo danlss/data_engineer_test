@@ -56,52 +56,6 @@ def get_postgres_connection():
 
 def criar_tabelas():
     conn, cur = get_postgres_connection()
-    
-    # cur.execute("""
-    #     CREATE TABLE IF NOT EXISTS dic_fonte_recurso (
-    #         id_fonte_recurso VARCHAR(10) PRIMARY KEY,
-    #         nome_fonte_recurso VARCHAR(255)
-    #     );
-    #     """)
-    # # Criação da tabela raw_despesas
-    # cur.execute("""
-    # CREATE TABLE IF NOT EXISTS raw_despesas (
-    #     id SERIAL PRIMARY KEY,
-    #     fonte_recurso VARCHAR(255),
-    #     despesa VARCHAR(255),
-    #     liquidado NUMERIC(18, 2)
-    # );
-    # """)
-
-    # # Criação da tabela raw_receitas
-    # cur.execute("""
-    # CREATE TABLE IF NOT EXISTS raw_receitas (
-    #     id SERIAL PRIMARY KEY,
-    #     fonte_recurso VARCHAR(255),
-    #     receita VARCHAR(255),
-    #     arrecadado NUMERIC(18, 2)
-    # );
-    # """)
-
-    # # Criação da tabela trusted_despesas
-    # cur.execute("""
-    # CREATE TABLE IF NOT EXISTS trusted_despesas (
-    #     id SERIAL PRIMARY KEY,
-    #     fonte_recurso VARCHAR(255),
-    #     liquidado_brl NUMERIC(18, 2),
-    #     dt_insert TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    # );
-    # """)
-
-    # # Criação da tabela trusted_receitas
-    # cur.execute("""
-    # CREATE TABLE IF NOT EXISTS trusted_receitas (
-    #     id SERIAL PRIMARY KEY,
-    #     fonte_recurso VARCHAR(255),
-    #     arrecadado_brl NUMERIC(18, 2),
-    #     dt_insert TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    # );
-    # """)
 
     # Criação da tabela refined_orcamento
     cur.execute("""
