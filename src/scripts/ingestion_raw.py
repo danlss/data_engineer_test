@@ -13,6 +13,7 @@ def extract_id_and_name(fonte_recurso):
     else:
         return None, None
     
+# Task 1: Ingestão de Dados (ETL) na Raw
 def ingestao_raw():
     criar_tabelas()
     directory = download_files()
@@ -26,9 +27,17 @@ def ingestao_raw():
     despesas = pd.read_csv(os.path.join(directory, "gdvDespesasExcel.csv"), encoding='ISO-8859-1')
     receitas = pd.read_csv(os.path.join(directory, "gdvReceitasExcel.csv"), encoding='ISO-8859-1')
 
+    # Remove qualquer coluna que seja completamente vazia ou indesejada (por exemplo, "Unnamed: 3")
+    # despesas = despesas.loc[:, despesas.columns.notna() & ~despesas.columns.str.contains('^Unnamed')]
+    # receitas = receitas.loc[:, receitas.columns.notna() & ~receitas.columns.str.contains('^Unnamed')]
+
     # Extrai o ID e o Nome da Fonte de Recurso na camada raw
     despesas[['id_fonte', 'nome_fonte']] = despesas['Fonte de Recursos'].apply(lambda x: pd.Series(extract_id_and_name(x)))
     receitas[['id_fonte', 'nome_fonte']] = receitas['Fonte de Recursos'].apply(lambda x: pd.Series(extract_id_and_name(x)))
+
+    # Remove a coluna 'Fonte de Recursos' já que id_fonte e nome_fonte já foram extraídos
+    despesas = despesas.drop(columns=['Fonte de Recursos'])
+    receitas = receitas.drop(columns=['Fonte de Recursos'])
 
     # Salva os arquivos CSV na camada raw
     despesas.to_csv(os.path.join(raw_dir, "despesas.csv"), index=False)
