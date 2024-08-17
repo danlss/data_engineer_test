@@ -10,34 +10,77 @@ from airflow.utils.dates import days_ago
 import dotenv
 import os
 import pandas as pd
+import logging
 
 dotenv.load_dotenv("/home/danlss/Documentos/desafio karhub/data_engineer_test/.env")
 
+# Configuração básica de logging
+logging.basicConfig(level=logging.INFO)
+
+# Função para salvar logs em CSV
+def save_log(log_content, task_id):
+    log_dir = os.path.join("datalake", "logs")
+    os.makedirs(log_dir, exist_ok=True)  # Cria o diretório se não existir
+    log_path = os.path.join(log_dir, f"{task_id}_log.csv")
+    
+    # Criando um DataFrame para salvar o log
+    log_df = pd.DataFrame(log_content, columns=["timestamp", "level", "message"])
+    log_df.to_csv(log_path, index=False)
+
 # Task 1: Consolidação dos dados para a camada refined
 def task_consolidacao_refined(**kwargs):
-    refined_df, refined_dir = consolidacao_refined()
-    # Salvar o DataFrame consolidado como CSV temporário para ser usado nas próximas tasks
-    temp_csv_path = os.path.join(refined_dir, "temp_refined.csv")
-    refined_df.to_csv(temp_csv_path, index=False)
-    # Passando o caminho do CSV temporário para as próximas tasks via XCom
-    kwargs['ti'].xcom_push(key='temp_csv_path', value=temp_csv_path)
+    log_content = []
+    try:
+        logging.info("Iniciando a consolidação dos dados para a camada refined.")
+        refined_df, refined_dir = consolidacao_refined()
+        logging.info(f"Dados consolidados com sucesso. Salvando em {refined_dir}")
+        temp_csv_path = os.path.join(refined_dir, "temp_refined.csv")
+        refined_df.to_csv(temp_csv_path, index=False)
+        kwargs['ti'].xcom_push(key='temp_csv_path', value=temp_csv_path)
+        logging.info("Caminho do CSV temporário enviado via XCom.")
+    except Exception as e:
+        logging.error(f"Erro durante a consolidação: {str(e)}")
+        log_content.append((datetime.now(), "ERROR", str(e)))
+        raise
+    finally:
+        log_content.append((datetime.now(), "INFO", "Consolidação de dados finalizada."))
+        save_log(log_content, "consolidacao_refined")
 
 # Task 2: Salvamento do CSV na camada refined
 def task_save_csv(**kwargs):
-    # Obtendo o caminho do CSV temporário via XCom
-    temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidacao_refined')
-    refined_df = pd.read_csv(temp_csv_path)
-    refined_dir = os.path.dirname(temp_csv_path)
-    save_csv(refined_df, refined_dir)
+    log_content = []
+    try:
+        logging.info("Iniciando o salvamento do CSV na camada refined.")
+        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidacao_refined')
+        refined_df = pd.read_csv(temp_csv_path)
+        refined_dir = os.path.dirname(temp_csv_path)
+        save_csv(refined_df, refined_dir)
+        logging.info("CSV salvo com sucesso na camada refined.")
+    except Exception as e:
+        logging.error(f"Erro durante o salvamento do CSV: {str(e)}")
+        log_content.append((datetime.now(), "ERROR", str(e)))
+        raise
+    finally:
+        log_content.append((datetime.now(), "INFO", "Salvamento de CSV finalizado."))
+        save_log(log_content, "save_csv")
 
 # Task 3: Persistência dos dados no banco de dados
 def task_persists_db(**kwargs):
-    # Obtendo o caminho do CSV temporário via XCom
-    temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidacao_refined')
-    refined_df = pd.read_csv(temp_csv_path)
-    persists_db(refined_df)
+    log_content = []
+    try:
+        logging.info("Iniciando a persistência dos dados no banco de dados.")
+        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidacao_refined')
+        refined_df = pd.read_csv(temp_csv_path)
+        persists_db(refined_df)
+        logging.info("Dados persistidos com sucesso no banco de dados.")
+    except Exception as e:
+        logging.error(f"Erro durante a persistência no banco de dados: {str(e)}")
+        log_content.append((datetime.now(), "ERROR", str(e)))
+        raise
+    finally:
+        log_content.append((datetime.now(), "INFO", "Persistência de dados finalizada."))
+        save_log(log_content, "persist_db")
 
-# Configuração da DAG no Airflow com melhorias para monitoramento e robustez
 with DAG(
     dag_id="etl_markdown_pipeline",
     start_date=days_ago(1),
