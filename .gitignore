@@ -5,6 +5,6 @@
 **/*.db
 **/*.cfg
 **/*.pid
-**/*.txt
 airflow/logs
+airflow/standalone_admin_password.txt
 airflow/webserver_config.py
