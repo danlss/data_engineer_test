@@ -120,23 +120,12 @@ def gerar_markdown(resultados):
 
     return markdown
 
+#salvar markdown em pasta com timestamp
 def salvar_markdown():
     resultados = executar_consultas()
     markdown = gerar_markdown(resultados)
 
     # Opcional: salvar em um arquivo .md
-    with open("/home/danlss/Documentos/desafio karhub/data_engineer_test/resultados_esperados.md", "w") as file:
+    with open("/home/danlss/Documentos/desafio karhub/data_engineer_code/resultados_esperados.md", "w") as file:
         file.write(markdown)
 
-# # Executar as consultas e obter os resultados
-# resultados = executar_consultas()
-
-# # Gerar o markdown com base nos resultados
-# markdown_dinamico = gerar_markdown(resultados)
-
-# # Exibir ou salvar o markdown gerado
-# print(markdown_dinamico)
-
-# # Opcional: salvar em um arquivo .md
-# with open("resultados_esperados.md", "w") as file:
-#     file.write(markdown_dinamico)
