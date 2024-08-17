@@ -17,54 +17,19 @@ def ingestao_raw():
     criar_tabelas()
     directory = download_files()
 
-    conn, cur = get_postgres_connection()
+    # Define o diretório para salvar os arquivos raw
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    raw_dir = os.path.join("datalake", "raw", timestamp)
+    os.makedirs(raw_dir, exist_ok=True)
 
-    # Leitura dos arquivos CSV com especificação da codificação
+    # Carrega os arquivos CSV com Pandas
     despesas = pd.read_csv(os.path.join(directory, "gdvDespesasExcel.csv"), encoding='ISO-8859-1')
     receitas = pd.read_csv(os.path.join(directory, "gdvReceitasExcel.csv"), encoding='ISO-8859-1')
 
-    # Inserindo dados na tabela raw_despesas e dicionário
-    for index, row in despesas.iterrows():
-        id_fonte, nome_fonte = extract_id_and_name(row['Fonte de Recursos'])
-        
-        if id_fonte and nome_fonte:  # Verifica se a extração foi bem-sucedida
-            # Corrigindo a formatação para conversão correta de string para float
-            liquidado = float(row['Liquidado'].replace('.', '').replace(',', '.'))
+    # Extrai o ID e o Nome da Fonte de Recurso na camada raw
+    despesas[['id_fonte', 'nome_fonte']] = despesas['Fonte de Recursos'].apply(lambda x: pd.Series(extract_id_and_name(x)))
+    receitas[['id_fonte', 'nome_fonte']] = receitas['Fonte de Recursos'].apply(lambda x: pd.Series(extract_id_and_name(x)))
 
-            # Inserir no dicionário se não existir
-            cur.execute("""
-                INSERT INTO dic_fonte_recurso (id_fonte_recurso, nome_fonte_recurso)
-                VALUES (%s, %s)
-                ON CONFLICT (id_fonte_recurso) DO NOTHING
-            """, (id_fonte, nome_fonte))
-
-            # Inserir na tabela raw_despesas
-            cur.execute("""
-                INSERT INTO raw_despesas (fonte_recurso, despesa, liquidado) 
-                VALUES (%s, %s, %s)
-            """, (id_fonte, row['Despesa'], liquidado))
-
-    # Inserindo dados na tabela raw_receitas e dicionário
-    for index, row in receitas.iterrows():
-        id_fonte, nome_fonte = extract_id_and_name(row['Fonte de Recursos'])
-
-        if id_fonte and nome_fonte:  # Verifica se a extração foi bem-sucedida
-            # Corrigindo a formatação para conversão correta de string para float
-            arrecadado = float(row['Arrecadado'].replace('.', '').replace(',', '.'))
-
-            # Inserir no dicionário se não existir
-            cur.execute("""
-                INSERT INTO dic_fonte_recurso (id_fonte_recurso, nome_fonte_recurso)
-                VALUES (%s, %s)
-                ON CONFLICT (id_fonte_recurso) DO NOTHING
-            """, (id_fonte, nome_fonte))
-
-            # Inserir na tabela raw_receitas
-            cur.execute("""
-                INSERT INTO raw_receitas (fonte_recurso, receita, arrecadado) 
-                VALUES (%s, %s, %s)
-            """, (id_fonte, row['Receita'], arrecadado))
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    # Salva os arquivos CSV na camada raw
+    despesas.to_csv(os.path.join(raw_dir, "despesas.csv"), index=False)
+    receitas.to_csv(os.path.join(raw_dir, "receitas.csv"), index=False)

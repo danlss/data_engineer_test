@@ -1,5 +1,10 @@
 from src.scripts.preparation import get_postgres_connection
+import os
+import locale
+from datetime import datetime
 
+# Configura a localização para português do Brasil
+locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
 def executar_consultas():
     conn, cur = get_postgres_connection()
@@ -66,57 +71,61 @@ def executar_consultas():
 def gerar_markdown(resultados):
     markdown = "# Resultados Esperados Baseados nos Dados\n\n"
 
-    # Seção: 5 fontes que mais arrecadaram
     markdown += "## Quais são as 5 fontes de recursos que mais arrecadaram?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Total Arrecadado |\n"
     markdown += "|------------------|--------------------|------------------|\n"
     for row in resultados['top_5_arrecadaram']:
-        markdown += f"| {row[0]} | {row[1]} | {row[2]:,.2f} |\n"
+        valor = float(row[2]) if row[2] is not None else 0.0
+        formatted_value = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        markdown += f"| {row[0]} | {row[1]} | {formatted_value} |\n"
 
-    # Seção: 5 fontes que mais gastaram
     markdown += "\n## Quais são as 5 fontes de recursos que mais gastaram?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Total Liquidado |\n"
     markdown += "|------------------|--------------------|-----------------|\n"
     for row in resultados['top_5_gastaram']:
-        markdown += f"| {row[0]} | {row[1]} | {row[2]:,.2f} |\n"
+        valor = float(row[2]) if row[2] is not None else 0.0
+        formatted_value = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        markdown += f"| {row[0]} | {row[1]} | {formatted_value} |\n"
 
-    # Seção: 5 fontes com a melhor margem bruta
     markdown += "\n## Quais são as 5 fontes de recursos com a melhor margem bruta?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Margem Bruta |\n"
     markdown += "|------------------|--------------------|--------------|\n"
     for row in resultados['melhor_margem_bruta']:
-        markdown += f"| {row[0]} | {row[1]} | {row[2]:,.2f} |\n"
+        valor = float(row[2]) if row[2] is not None else 0.0
+        formatted_value = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        markdown += f"| {row[0]} | {row[1]} | {formatted_value} |\n"
 
-    # Seção: 5 fontes que menos arrecadaram
     markdown += "\n## Quais são as 5 fontes de recursos que menos arrecadaram?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Total Arrecadado |\n"
     markdown += "|------------------|--------------------|------------------|\n"
     for row in resultados['menor_arrecadaram']:
-        markdown += f"| {row[0]} | {row[1]} | {row[2]:,.2f} |\n"
+        valor = float(row[2]) if row[2] is not None else 0.0
+        formatted_value = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        markdown += f"| {row[0]} | {row[1]} | {formatted_value} |\n"
 
-    # Seção: 5 fontes que menos gastaram
     markdown += "\n## Quais são as 5 fontes de recursos que menos gastaram?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Total Liquidado |\n"
     markdown += "|------------------|--------------------|-----------------|\n"
     for row in resultados['menor_gastaram']:
-        markdown += f"| {row[0]} | {row[1]} | {row[2]:,.2f} |\n"
+        valor = float(row[2]) if row[2] is not None else 0.0
+        formatted_value = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        markdown += f"| {row[0]} | {row[1]} | {formatted_value} |\n"
 
-    # Seção: 5 fontes com a pior margem bruta
     markdown += "\n## Quais são as 5 fontes de recursos com a pior margem bruta?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Margem Bruta |\n"
     markdown += "|------------------|--------------------|--------------|\n"
     for row in resultados['pior_margem_bruta']:
-        markdown += f"| {row[0]} | {row[1]} | {row[2]:,.2f} |\n"
+        valor = float(row[2]) if row[2] is not None else 0.0
+        formatted_value = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        markdown += f"| {row[0]} | {row[1]} | {formatted_value} |\n"
 
-    # Seção: Média de arrecadação por fonte de recurso
-    media_arrecadacao = resultados['media_arrecadacao'][0][0]
+    media_arrecadacao = f"{float(resultados['media_arrecadacao'][0][0]):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     markdown += f"\n## Qual a média de arrecadação por fonte de recurso?\n"
-    markdown += f"- **Média de arrecadação:** {media_arrecadacao:,.2f}\n"
+    markdown += f"- **Média de arrecadação:** {media_arrecadacao}\n"
 
-    # Seção: Média de gastos por fonte de recurso
-    media_gastos = resultados['media_gastos'][0][0]
+    media_gastos = f"{float(resultados['media_gastos'][0][0]):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     markdown += f"\n## Qual a média de gastos por fonte de recurso?\n"
-    markdown += f"- **Média de gastos:** {media_gastos:,.2f}\n"
+    markdown += f"- **Média de gastos:** {media_gastos}\n"
 
     return markdown
 
@@ -125,7 +134,10 @@ def salvar_markdown():
     resultados = executar_consultas()
     markdown = gerar_markdown(resultados)
 
-    # Opcional: salvar em um arquivo .md
-    with open("/home/danlss/Documentos/desafio karhub/data_engineer_code/resultados_esperados.md", "w") as file:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    markdown_dir = os.path.join("datalake", "markdown", timestamp)
+    os.makedirs(markdown_dir, exist_ok=True)
+
+    with open(os.path.join(markdown_dir, "resultados_esperados.md"), "w") as file:
         file.write(markdown)
 

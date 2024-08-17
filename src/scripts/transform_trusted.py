@@ -1,39 +1,32 @@
 import pandas as pd
 import requests
 from datetime import datetime
-from src.scripts.preparation import get_postgres_connection
-
+import os
 
 def transformacao_trusted():
-    conn, cur = get_postgres_connection()
+# Define o diretório da camada raw
+    raw_dir = os.path.join("datalake", "raw")
+    latest_raw_dir = sorted(os.listdir(raw_dir))[-1]
+    raw_dir = os.path.join(raw_dir, latest_raw_dir)
 
-    # Obtendo a cotação do dólar para o dia 22/06/2022
+    despesas = pd.read_csv(os.path.join(raw_dir, "despesas.csv"))
+    receitas = pd.read_csv(os.path.join(raw_dir, "receitas.csv"))
+
+    # Obter cotação do dólar em 22/06/2022
     url = "https://economia.awesomeapi.com.br/json/daily/USD-BRL/1?start_date=20220622&end_date=20220622"
     response = requests.get(url)
-    dolar_cotacao = float(response.json()[0]['high'])  # Garantir que seja float
+    dolar_cotacao = float(response.json()[0]['high'])
 
-    # Convertendo e inserindo dados na tabela trusted_despesas
-    cur.execute("SELECT fonte_recurso, SUM(liquidado) FROM raw_despesas GROUP BY fonte_recurso")
-    despesas_rows = cur.fetchall()
+    # Aplica as transformações para a camada trusted
+    despesas['liquidado_brl'] = despesas['Liquidado'].str.replace('.', '').str.replace(',', '.').astype(float) * dolar_cotacao
+    receitas['arrecadado_brl'] = receitas['Arrecadado'].str.replace('.', '').str.replace(',', '.').astype(float) * dolar_cotacao
 
-    for row in despesas_rows:
-        liquidado_brl = float(row[1]) * dolar_cotacao  # Convertendo row[1] para float
-        cur.execute("""
-            INSERT INTO trusted_despesas (fonte_recurso, liquidado_brl) 
-            VALUES (%s, %s)
-        """, (row[0], liquidado_brl))
+    # Define o diretório para salvar os arquivos trusted
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    trusted_dir = os.path.join("datalake", "trusted", timestamp)
+    os.makedirs(trusted_dir, exist_ok=True)
 
-    # Convertendo e inserindo dados na tabela trusted_receitas
-    cur.execute("SELECT fonte_recurso, SUM(arrecadado) FROM raw_receitas GROUP BY fonte_recurso")
-    receitas_rows = cur.fetchall()
+    # Salva os arquivos CSV na camada trusted
+    despesas.to_csv(os.path.join(trusted_dir, "trusted_despesas.csv"), index=False)
+    receitas.to_csv(os.path.join(trusted_dir, "trusted_receitas.csv"), index=False)
 
-    for row in receitas_rows:
-        arrecadado_brl = float(row[1]) * dolar_cotacao  # Convertendo row[1] para float
-        cur.execute("""
-            INSERT INTO trusted_receitas (fonte_recurso, arrecadado_brl) 
-            VALUES (%s, %s)
-        """, (row[0], arrecadado_brl))
-
-    conn.commit()
-    cur.close()
-    conn.close()
