@@ -1,11 +1,11 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.python import PythonOperator
-from src.scripts.preparation import criar_tabelas
-from src.scripts.ingestion_raw import preparation, ingestao_raw
-from src.scripts.transform_trusted import get_cotation, transformacao_trusted
-from src.scripts.persist_refined import consolidacao_refined, save_csv, persists_db
-from src.scripts.reports import salvar_markdown
+from src.scripts.preparation import create_tables
+from src.scripts.ingestion_raw import preparation, ingest_raw
+from src.scripts.transform_trusted import get_exchange_rate, transform_trusted
+from src.scripts.persist_refined import consolidate_refined, save_csv, persist_db
+from src.scripts.reports import save_markdown
 from airflow.utils.dates import days_ago
 import dotenv
 import os
@@ -14,10 +14,10 @@ import logging
 
 dotenv.load_dotenv("/home/danlss/Documentos/desafio karhub/data_engineer_test/.env")
 
-# Configuração básica de logging
+# Basic logging configuration
 logging.basicConfig(level=logging.INFO)
 
-# Função para salvar logs em CSV
+# Function to save logs in CSV
 def save_log(log_content, task_id):
     log_dir = os.path.join("datalake", "logs")
     os.makedirs(log_dir, exist_ok=True)  # Cria o diretório se não existir
@@ -27,58 +27,58 @@ def save_log(log_content, task_id):
     log_df = pd.DataFrame(log_content, columns=["timestamp", "level", "message"])
     log_df.to_csv(log_path, index=False)
 
-# Task 1: Consolidação dos dados para a camada refined
-def task_consolidacao_refined(**kwargs):
+# Task 1: Consolidate data for the refined layer
+def task_consolidate_refined(**kwargs):
     log_content = []
     try:
-        logging.info("Iniciando a consolidação dos dados para a camada refined.")
-        refined_df, refined_dir = consolidacao_refined()
-        logging.info(f"Dados consolidados com sucesso. Salvando em {refined_dir}")
+        logging.info("Starting data consolidation for the refined layer.")
+        refined_df, refined_dir = consolidate_refined()
+        logging.info(f"Data successfully consolidated. Saving to {refined_dir}")
         temp_csv_path = os.path.join(refined_dir, "temp_refined.csv")
         refined_df.to_csv(temp_csv_path, index=False)
         kwargs['ti'].xcom_push(key='temp_csv_path', value=temp_csv_path)
-        logging.info("Caminho do CSV temporário enviado via XCom.")
+        logging.info("Temporary CSV path sent via XCom.")
     except Exception as e:
-        logging.error(f"Erro durante a consolidação: {str(e)}")
+        logging.error(f"Error during consolidation: {str(e)}")
         log_content.append((datetime.now(), "ERROR", str(e)))
         raise
     finally:
-        log_content.append((datetime.now(), "INFO", "Consolidação de dados finalizada."))
-        save_log(log_content, "consolidacao_refined")
+        log_content.append((datetime.now(), "INFO", "Data consolidation completed."))
+        save_log(log_content, "consolidate_refined")
 
-# Task 2: Salvamento do CSV na camada refined
+# Task 2: Save the CSV in the refined layer
 def task_save_csv(**kwargs):
     log_content = []
     try:
-        logging.info("Iniciando o salvamento do CSV na camada refined.")
-        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidacao_refined')
+        logging.info("Starting to save the CSV in the refined layer.")
+        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidate_refined')
         refined_df = pd.read_csv(temp_csv_path)
         refined_dir = os.path.dirname(temp_csv_path)
         save_csv(refined_df, refined_dir)
-        logging.info("CSV salvo com sucesso na camada refined.")
+        logging.info("CSV successfully saved in the refined layer.")
     except Exception as e:
-        logging.error(f"Erro durante o salvamento do CSV: {str(e)}")
+        logging.error(f"Error during CSV saving: {str(e)}")
         log_content.append((datetime.now(), "ERROR", str(e)))
         raise
     finally:
-        log_content.append((datetime.now(), "INFO", "Salvamento de CSV finalizado."))
+        log_content.append((datetime.now(), "INFO", "CSV saving completed."))
         save_log(log_content, "save_csv")
 
-# Task 3: Persistência dos dados no banco de dados
-def task_persists_db(**kwargs):
+# Task 3: Persist data to the database
+def task_persist_db(**kwargs):
     log_content = []
     try:
-        logging.info("Iniciando a persistência dos dados no banco de dados.")
-        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidacao_refined')
+        logging.info("Starting data persistence to the database.")
+        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidate_refined')
         refined_df = pd.read_csv(temp_csv_path)
-        persists_db(refined_df)
-        logging.info("Dados persistidos com sucesso no banco de dados.")
+        persist_db(refined_df)
+        logging.info("Data successfully persisted to the database.")
     except Exception as e:
-        logging.error(f"Erro durante a persistência no banco de dados: {str(e)}")
+        logging.error(f"Error during database persistence: {str(e)}")
         log_content.append((datetime.now(), "ERROR", str(e)))
         raise
     finally:
-        log_content.append((datetime.now(), "INFO", "Persistência de dados finalizada."))
+        log_content.append((datetime.now(), "INFO", "Data persistence completed."))
         save_log(log_content, "persist_db")
 
 with DAG(
@@ -102,66 +102,66 @@ with DAG(
         execution_timeout=timedelta(minutes=15),  # Tempo máximo de execução
     )
 
-    task_ingestao_raw = PythonOperator(
-        task_id='ingestao_raw',
-        python_callable=ingestao_raw,
+    task_ingest_raw = PythonOperator(
+        task_id='ingest_raw',
+        python_callable=ingest_raw,
         dag=dag,
         execution_timeout=timedelta(minutes=30),  # Tempo máximo de execução
     )
 
-    task_get_cotation_trusted = PythonOperator(
-        task_id='dolar_cotation',
-        python_callable=get_cotation,
+    task_get_exchange_rate = PythonOperator(
+        task_id='dolar_exchange',
+        python_callable=get_exchange_rate,
         dag=dag,
         execution_timeout=timedelta(minutes=10),  # Tempo máximo de execução
     )
 
-    task_transformacao_trusted = PythonOperator(
-        task_id='transformacao_trusted',
-        python_callable=transformacao_trusted,
+    task_transform_trusted = PythonOperator(
+        task_id='transform_trusted',
+        python_callable=transform_trusted,
         dag=dag,
         execution_timeout=timedelta(minutes=20),  # Tempo máximo de execução
     )
 
-    task_tables_refined = PythonOperator(
+    task_create_tables_refined = PythonOperator(
         task_id='create_tables',
-        python_callable=criar_tabelas,
+        python_callable=create_tables,
         dag=dag,
         trigger_rule='all_done',  # Executa mesmo que alguma task anterior falhe
     )
 
-    task_consolidacao = PythonOperator(
-        task_id='consolidacao_refined',
-        python_callable=task_consolidacao_refined,
+    task_consolidate = PythonOperator(
+        task_id='consolidate_refined',
+        python_callable=task_consolidate_refined,
         provide_context=True,
         dag=dag,
     )
 
-    task_salvar_csv = PythonOperator(
+    task_save_csv_ = PythonOperator(
         task_id='save_csv',
         python_callable=task_save_csv,
         provide_context=True,
         dag=dag,
     )
 
-    task_persistir_db = PythonOperator(
+    task_persist_db_ = PythonOperator(
         task_id='persist_db',
-        python_callable=task_persists_db,
+        python_callable=task_persist_db,
         provide_context=True,
         dag=dag,
     )
 
-    task_salvar_markdown = PythonOperator(
-        task_id='salvar_markdown',
-        python_callable=salvar_markdown,
+    task_save_markdown = PythonOperator(
+        task_id='save_markdown',
+        python_callable=save_markdown,
         dag=dag,
     )
 
     # Definindo a ordem de execução das tasks com paralelização e monitoramento
-    task_preparation_raw >> task_ingestao_raw
-    task_get_cotation_trusted >> task_transformacao_trusted
-    [task_ingestao_raw, task_get_cotation_trusted] >> task_transformacao_trusted
-    task_transformacao_trusted >> [task_tables_refined, task_consolidacao]
-    task_consolidacao >> task_salvar_csv
-    [task_tables_refined, task_salvar_csv] >> task_persistir_db
-    task_persistir_db >> task_salvar_markdown
+    task_preparation_raw >> task_ingest_raw
+    task_get_exchange_rate >> task_transform_trusted
+    [task_ingest_raw, task_get_exchange_rate] >> task_transform_trusted
+    task_transform_trusted >> [task_create_tables_refined, task_consolidate]
+    task_consolidate >> task_save_csv_
+    [task_create_tables_refined, task_save_csv_] >> task_persist_db_
+    task_persist_db_ >> task_save_markdown

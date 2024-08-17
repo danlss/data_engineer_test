@@ -6,40 +6,40 @@ from datetime import datetime
  
 
 def download_files():
-    # Definindo o diretório base do Data Lake
+    # Defining the base directory of the Data Lake
     datalake_dir = "datalake"
     transient_dir = os.path.join(datalake_dir, "transient")
 
-    # Criar o diretório "transient" dentro do Data Lake, caso não exista
+    # Create the "transient" directory inside the Data Lake, if it doesn't exist
     if not os.path.exists(transient_dir):
         os.makedirs(transient_dir)
 
-    # Obter o timestamp atual
+    # Get the current timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Criar a subpasta dentro de "transient" com o timestamp
+    # Create the subfolder inside "transient" with the timestamp
     directory = os.path.join(transient_dir, timestamp)
     os.makedirs(directory, exist_ok=True)
     
-    # Simulação das respostas HTTP
+    # Simulating HTTP responses
     response1 = requests.get('https://github.com/karhub-br/data_engineer_test_v2/raw/main/gdvDespesasExcel.csv')
     response2 = requests.get('https://github.com/karhub-br/data_engineer_test_v2/raw/main/gdvReceitasExcel.csv')
 
-    # Download do primeiro arquivo
+    # Download the first file
     if response1.status_code == 200:
         with open(os.path.join(directory, "gdvDespesasExcel.csv"), 'wb') as file:
             file.write(response1.content)
-        print(f"Arquivo de despesas salvo em: {directory}/gdvDespesasExcel.csv")
+        print(f"Expenses file saved at: {directory}/gdvDespesasExcel.csv")
     else:
-        print(f"Falha ao baixar o arquivo de despesas. Status code: {response1.status_code}")
+        print(f"Failed to download the expenses file. Status code: {response1.status_code}")
 
-    # Download do segundo arquivo
+    # Download the second file
     if response2.status_code == 200:
         with open(os.path.join(directory, "gdvReceitasExcel.csv"), 'wb') as file:
             file.write(response2.content)
-        print(f"Arquivo de receitas salvo em: {directory}/gdvReceitasExcel.csv")
+        print(f"Revenues file saved at: {directory}/gdvReceitasExcel.csv")
     else:
-        print(f"Falha ao baixar o arquivo de receitas. Status code: {response2.status_code}")
+        print(f"Failed to download the revenues file. Status code: {response2.status_code}")
 
     return directory
 
@@ -54,10 +54,10 @@ def get_postgres_connection():
     cur = conn.cursor()
     return conn, cur
 
-def criar_tabelas():
+def create_tables():
     conn, cur = get_postgres_connection()
 
-    # Criação da tabela refined_orcamento
+    # Create the refined_budget table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS refined_orcamento (
         id_fonte_recurso VARCHAR(255),
@@ -68,14 +68,6 @@ def criar_tabelas():
         dt_insert TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
-
-    # # Criação da tabela de dicionário de fontes de recursos
-    # cur.execute("""
-    # CREATE TABLE IF NOT EXISTS dic_fonte_recurso (
-    #     id_fonte_recurso VARCHAR(10) PRIMARY KEY,
-    #     nome_fonte_recurso VARCHAR(255)
-    # );
-    # """)
 
     conn.commit()
     cur.close()
