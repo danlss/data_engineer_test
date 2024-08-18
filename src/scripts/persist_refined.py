@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from datetime import datetime
-from src.scripts.preparation import get_postgres_connection
+from scripts.preparation import get_postgres_connection
 
 def consolidate_refined():
     # Define the directory for the trusted layer

@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from datetime import datetime
 import re
-from src.scripts.preparation import download_files
+from scripts.preparation import download_files
 
 def extract_id_and_name(fund_source):
     if pd.isna(fund_source):  # Check if the value is NaN
@@ -13,15 +13,21 @@ def extract_id_and_name(fund_source):
     else:
         return None, None
 
-def preparation():
+def preparation(**kwargs):
     directory = download_files()
+    # Armazena o diretório em XCom
+    kwargs['ti'].xcom_push(key='directory', value=directory)
     return directory
+
+def ingest_raw_wrapper(**kwargs):
+    directory = kwargs['ti'].xcom_pull(key='directory', task_ids='preparation')
+    if directory is None:
+        raise ValueError("Directory path is None. Check if the 'preparation' task ran successfully.")
+    ingest_raw(directory)
     
 # Task 1: Data Ingestion (ETL) into Raw Layer
-def ingest_raw():
-    directory = preparation()
-
-    # Define the directory to save the raw files
+def ingest_raw(directory):
+    # Define o diretório para salvar os arquivos raw
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     raw_dir = os.path.join("datalake", "raw", timestamp)
     os.makedirs(raw_dir, exist_ok=True)

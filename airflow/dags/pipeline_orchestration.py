@@ -1,18 +1,15 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.python import PythonOperator
-from src.scripts.preparation import create_tables
-from src.scripts.ingestion_raw import preparation, ingest_raw
-from src.scripts.transform_trusted import get_exchange_rate, transform_trusted
-from src.scripts.persist_refined import consolidate_refined, save_csv, persist_db
-from src.scripts.reports import save_markdown
+from scripts.preparation import create_tables
+from scripts.ingestion_raw import preparation, ingest_raw_wrapper, ingest_raw
+from scripts.transform_trusted import get_exchange_rate, transform_trusted
+from scripts.persist_refined import consolidate_refined, save_csv, persist_db
+from scripts.reports import save_markdown
 from airflow.utils.dates import days_ago
-import dotenv
 import os
 import pandas as pd
 import logging
-
-dotenv.load_dotenv("/home/danlss/Documentos/desafio karhub/data_engineer_test/.env")
 
 # Basic logging configuration
 logging.basicConfig(level=logging.INFO)
@@ -98,15 +95,17 @@ with DAG(
     task_preparation_raw = PythonOperator(
         task_id='preparation',
         python_callable=preparation,
+        provide_context=True,
         dag=dag,
-        execution_timeout=timedelta(minutes=15),  # Tempo máximo de execução
+        execution_timeout=timedelta(minutes=15),
     )
 
     task_ingest_raw = PythonOperator(
         task_id='ingest_raw',
-        python_callable=ingest_raw,
+        python_callable=ingest_raw_wrapper,
+        provide_context=True,
         dag=dag,
-        execution_timeout=timedelta(minutes=30),  # Tempo máximo de execução
+        execution_timeout=timedelta(minutes=30),
     )
 
     task_get_exchange_rate = PythonOperator(

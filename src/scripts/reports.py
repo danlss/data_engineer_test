@@ -1,4 +1,4 @@
-from src.scripts.preparation import get_postgres_connection
+from scripts.preparation import get_postgres_connection
 import os
 import locale
 from datetime import datetime

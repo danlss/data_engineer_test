@@ -1,8 +1,13 @@
-import pandas as pd
 import psycopg2
 import requests
 import os
 from datetime import datetime
+
+POSTGRES_DB = os.environ["POSTGRES_DB"]
+POSTGRES_USER = os.environ["POSTGRES_USER"]
+POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
+POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.environ.get("POSTGRES_PORT", 5432)
  
 
 def download_files():
@@ -45,11 +50,11 @@ def download_files():
 
 def get_postgres_connection():
     conn = psycopg2.connect(
-        dbname=os.environ["POSTGRES_DB"], 
-        user=os.environ["POSTGRES_USER"], 
-        password=os.environ["POSTGRES_PASSWORD"], 
-        host="localhost", 
-        port="5432"
+        dbname=POSTGRES_DB, 
+        user=POSTGRES_USER, 
+        password=POSTGRES_PASSWORD, 
+        host=POSTGRES_HOST, 
+        port=POSTGRES_PORT
     )
     cur = conn.cursor()
     return conn, cur
