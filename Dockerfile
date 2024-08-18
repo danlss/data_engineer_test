@@ -1,6 +1,5 @@
 FROM python:3.10-bullseye
 
-ARG AIRFLOW_VERSION=2.7.0
 WORKDIR /workspace
 
 # Install dependencies
