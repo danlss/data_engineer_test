@@ -69,7 +69,7 @@ def execute_queries():
 
 # Convert values to Brazilian BR format
 def generate_markdown(results):
-    markdown = "# results Esperados Baseados nos Dados\n\n"
+    markdown = "# resultados Esperados Baseados nos Dados\n\n"
 
     markdown += "## Quais são as 5 fontes de recursos que mais arrecadaram?\n"
     markdown += "| ID Fonte Recurso | Nome Fonte Recurso | Total Arrecadado |\n"
