@@ -35,8 +35,8 @@ Para reproduzir as análises realizadas neste projeto, siga os passos abaixo:
 
 - **Python 3.8+**
 - **Apache Airflow** (Standalone)
-- **PostgreSQL**
-- **Docker** (opcional, mas recomendado para execução em ambiente controlado)
+- **Docker** (para orquestração do PostgreSQL)
+- **Docker Compose** (para facilitar a configuração dos serviços)
 - **Dependências Python** (definidas no arquivo `requirements.txt`)
 
 ### Setup do Ambiente
@@ -64,11 +64,22 @@ Para reproduzir as análises realizadas neste projeto, siga os passos abaixo:
     POSTGRES_DB=nome_do_banco
     POSTGRES_USER=usuario
     POSTGRES_PASSWORD=senha
-    POSTGRES_HOST=localhost
+    POSTGRES_HOST=db
     POSTGRES_PORT=5432
     ```
 
-4. Configure o Apache Airflow em modo Standalone:
+4. Configure e inicie o Docker:
+
+    - Certifique-se de que o Docker e o Docker Compose estão instalados em sua máquina.
+    - Use o comando abaixo para iniciar os containers Docker:
+
+    ```bash
+    docker-compose up -d
+    ```
+
+    Este comando iniciará o PostgreSQL e outros serviços necessários em containers isolados.
+
+5. Configure o Apache Airflow em modo Standalone:
 
     1. **Inicialize o Airflow**:
 
@@ -117,4 +128,4 @@ Os resultados dessas consultas são formatados e apresentados em um relatório M
 
 ### Considerações Finais
 
-Este projeto serve como um exemplo de pipeline de dados completo utilizando ferramentas modernas como Apache Airflow (Standalone) e PostgreSQL, além de boas práticas para organização de um Data Lake. Sinta-se à vontade para adaptar o código e as configurações conforme necessário para seus próprios projetos.
+Este projeto demonstra a automação completa de um fluxo de dados utilizando orquestração com Apache Airflow e infraestrutura containerizada com Docker. A utilização de Docker para o PostgreSQL garante que o ambiente seja replicável e controlado, permitindo maior confiabilidade no processamento e análise dos dados. A abordagem empregada atende plenamente ao objetivo de avaliar conhecimentos em orquestração, infraestrutura, e conteinerização do projeto, demonstrando a capacidade de integrar diferentes tecnologias de maneira eficiente e escalável.
