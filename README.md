@@ -88,7 +88,7 @@ Para reproduzir as análises realizadas neste projeto, siga os passos abaixo:
         ```
 
     2. **Acesse a interface do Airflow**:
-        - O Airflow estará disponível em `http://localhost:8080`. Use as credenciais fornecidas no terminal após iniciar o Airflow.
+        - O Airflow estará disponível em `http://localhost:8080`. Use as credenciais de login `admin` e a senha disponível no arquivo `airflow/standalone_admin_password.txt` gerado no diretório do Airflow após a inicialização.
 
 ### Execução das Tarefas
 
@@ -112,6 +112,10 @@ O Data Lake é organizado nas seguintes camadas:
 - **refined**: Contém os dados finais prontos para análise.
 - **reports**: Armazena os relatórios gerados a partir dos dados refinados.
 
+### Importância da Estrutura com Logs e Subpastas Timestamp
+
+A estrutura adotada neste projeto, com logs detalhados e subpastas organizadas por timestamps, é fundamental para garantir um monitoramento eficaz e um controle de auditoria robusto. Cada etapa do processo é registrada em logs, permitindo rastrear qualquer evento ou erro ocorrido durante a execução das tarefas. As subpastas com timestamps garantem que todas as versões dos dados e logs sejam armazenadas de forma ordenada, facilitando o histórico de processamento e a recuperação de informações específicas em caso de necessidade. Esta abordagem não só melhora a transparência do fluxo de trabalho como também reforça a confiabilidade do sistema, permitindo auditorias detalhadas e um gerenciamento de dados mais eficiente.
+
 ### Consultas e Relatórios
 
 As consultas SQL realizadas para gerar os relatórios incluem:
@@ -128,4 +132,4 @@ Os resultados dessas consultas são formatados e apresentados em um relatório M
 
 ### Considerações Finais
 
-Este projeto demonstra a automação completa de um fluxo de dados utilizando orquestração com Apache Airflow e infraestrutura containerizada com Docker. A utilização de Docker para o PostgreSQL garante que o ambiente seja replicável e controlado, permitindo maior confiabilidade no processamento e análise dos dados. A abordagem empregada atende plenamente ao objetivo de avaliar conhecimentos em orquestração, infraestrutura, e conteinerização do projeto, demonstrando a capacidade de integrar diferentes tecnologias de maneira eficiente e escalável.
+Este projeto demonstra a automação completa de um fluxo de dados utilizando orquestração com Apache Airflow e infraestrutura containerizada com Docker. A utilização de Docker para o PostgreSQL garante que o ambiente seja replicável e controlado, permitindo maior confiabilidade no processamento e análise dos dados. A estrutura com logs detalhados e subpastas organizadas por timestamps é essencial para o monitoramento contínuo e a auditoria de todo o processo, reforçando a transparência e a integridade dos dados. A abordagem empregada atende plenamente ao objetivo de avaliar conhecimentos em orquestração, infraestrutura, e conteinerização do projeto, demonstrando a capacidade de integrar diferentes tecnologias de maneira eficiente e escalável.
