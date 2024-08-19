@@ -17,14 +17,13 @@ logging.basicConfig(level=logging.INFO)
 # Function to save logs in CSV
 def save_log(log_content, task_id):
     log_dir = os.path.join("datalake", "logs")
-    os.makedirs(log_dir, exist_ok=True)  # Cria o diretório se não existir
+    os.makedirs(log_dir, exist_ok=True)  
     log_path = os.path.join(log_dir, f"{task_id}_log.csv")
     
-    # Criando um DataFrame para salvar o log
     log_df = pd.DataFrame(log_content, columns=["timestamp", "level", "message"])
     log_df.to_csv(log_path, index=False)
 
-# Task 1: Consolidate data for the refined layer
+# Task 1: Consolidate data with logs for the refined layer
 def task_consolidate_refined(**kwargs):
     log_content = []
     try:
@@ -43,7 +42,7 @@ def task_consolidate_refined(**kwargs):
         log_content.append((datetime.now(), "INFO", "Data consolidation completed."))
         save_log(log_content, "consolidate_refined")
 
-# Task 2: Save the CSV in the refined layer
+# Task 2: Save the CSV in the refined layer 
 def task_save_csv(**kwargs):
     log_content = []
     try:
@@ -82,16 +81,15 @@ with DAG(
     dag_id="etl_markdown_pipeline",
     start_date=days_ago(1),
     schedule_interval='@daily',
-    max_active_runs=1,  # Garante que apenas uma execução da DAG ocorra ao mesmo tempo
-    concurrency=5,  # Limita o número de tasks que podem ser executadas em paralelo
+    max_active_runs=1,  
+    concurrency=5,  
     default_args={
         'owner': 'airflow',
-        'retries': 3,  # Tenta 3 vezes antes de marcar como falha
-        'retry_delay': timedelta(minutes=5),  # Espera 5 minutos antes de tentar novamente
+        'retries': 3,  
+        'retry_delay': timedelta(minutes=5),  
     }
 ) as dag:
 
-    # Definição das tasks no Airflow
     task_preparation_raw = PythonOperator(
         task_id='preparation',
         python_callable=preparation,
@@ -112,21 +110,21 @@ with DAG(
         task_id='dolar_exchange',
         python_callable=get_exchange_rate,
         dag=dag,
-        execution_timeout=timedelta(minutes=10),  # Tempo máximo de execução
+        execution_timeout=timedelta(minutes=10),  
     )
 
     task_transform_trusted = PythonOperator(
         task_id='transform_trusted',
         python_callable=transform_trusted,
         dag=dag,
-        execution_timeout=timedelta(minutes=20),  # Tempo máximo de execução
+        execution_timeout=timedelta(minutes=20),  
     )
 
     task_create_tables_refined = PythonOperator(
         task_id='create_tables',
         python_callable=create_tables,
         dag=dag,
-        trigger_rule='all_done',  # Executa mesmo que alguma task anterior falhe
+        trigger_rule='all_done',  
     )
 
     task_consolidate = PythonOperator(
@@ -156,7 +154,7 @@ with DAG(
         dag=dag,
     )
 
-    # Definindo a ordem de execução das tasks com paralelização e monitoramento
+    # Defining the task execution order with parallelization and monitoring
     task_preparation_raw >> task_ingest_raw
     task_get_exchange_rate >> task_transform_trusted
     [task_ingest_raw, task_get_exchange_rate] >> task_transform_trusted

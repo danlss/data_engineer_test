@@ -20,7 +20,6 @@ def consolidate_refined():
     refined_df.columns = ['Fund ID', 'Fund Name', 'Total Liquidated', 'Total Collected']
     refined_df['Dt_Insert'] = datetime.now()
 
-    # Replacing NaN values with 0.0
     refined_df.fillna(0.0, inplace=True)
 
     # Define the directory to save the refined files
@@ -31,14 +30,12 @@ def consolidate_refined():
     return refined_df, refined_dir
 
 def save_csv(refined_df, refined_dir):
-    # Save the CSV files in the refined layer
     refined_df.to_csv(os.path.join(refined_dir, "refined_budget.csv"), index=False)
 
 def persist_db(refined_df):
     conn, cur = get_postgres_connection()
     
     try:
-        # Inserting the refined data into the database
         for _, row in refined_df.iterrows():
             cur.execute("""
                 INSERT INTO refined_orcamento (id_fonte_recurso, nome_fonte_recurso, total_arrecadado, total_liquidado, dt_insert) 
@@ -53,16 +50,3 @@ def persist_db(refined_df):
     finally:
         cur.close()
         conn.close()
-
-def main():
-    # Consolidate the data and get the dataframe and directory to save
-    refined_df, refined_dir = consolidate_refined()
-
-    # Save the CSV in the specified directory
-    save_csv(refined_df, refined_dir)
-
-    # Persist the data in the database
-    persist_db(refined_df)
-
-if __name__ == "__main__":
-    main()
