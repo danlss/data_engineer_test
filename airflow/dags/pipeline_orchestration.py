@@ -45,13 +45,17 @@ def task_consolidate_refined(**kwargs):
 # Task 2: Save the CSV in the refined layer 
 def task_save_csv(**kwargs):
     log_content = []
+    temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidate_refined')
     try:
         logging.info("Starting to save the CSV in the refined layer.")
-        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidate_refined')
         refined_df = pd.read_csv(temp_csv_path)
         refined_dir = os.path.dirname(temp_csv_path)
+        final_csv_path = os.path.join(refined_dir, "refined_budget.csv")
         save_csv(refined_df, refined_dir)
         logging.info("CSV successfully saved in the refined layer.")
+        
+        # Pass the final CSV path via XCom to the next task
+        kwargs['ti'].xcom_push(key='final_csv_path', value=final_csv_path)
     except Exception as e:
         logging.error(f"Error during CSV saving: {str(e)}")
         log_content.append((datetime.now(), "ERROR", str(e)))
@@ -59,14 +63,18 @@ def task_save_csv(**kwargs):
     finally:
         log_content.append((datetime.now(), "INFO", "CSV saving completed."))
         save_log(log_content, "save_csv")
+        # Deleting the temporary file
+        if os.path.exists(temp_csv_path):
+            os.remove(temp_csv_path)
+            logging.info(f"Temporary CSV file {temp_csv_path} deleted.")
 
 # Task 3: Persist data to the database
 def task_persist_db(**kwargs):
     log_content = []
     try:
         logging.info("Starting data persistence to the database.")
-        temp_csv_path = kwargs['ti'].xcom_pull(key='temp_csv_path', task_ids='consolidate_refined')
-        refined_df = pd.read_csv(temp_csv_path)
+        final_csv_path = kwargs['ti'].xcom_pull(key='final_csv_path', task_ids='save_csv')
+        refined_df = pd.read_csv(final_csv_path)
         persist_db(refined_df)
         logging.info("Data successfully persisted to the database.")
     except Exception as e:
