@@ -49,15 +49,12 @@ git clone https://github.com/danlss/data_engineer_test.git
 ##### Execute com Docker:
 
 1. **Crie o Arquivo .env**:
-   - Configure as variáveis de ambiente para o PostgreSQL:
    - Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ```bash
 POSTGRES_DB=nome_do_banco
 POSTGRES_USER=usuario
 POSTGRES_PASSWORD=senha
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
 ```
 
 2. **Inicie os Containers Docker**:
