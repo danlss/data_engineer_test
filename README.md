@@ -33,8 +33,7 @@ O projeto é composto por várias etapas, orquestradas pelo Apache Airflow. Abai
 
 - **Python 3.10**
 - **Apache Airflow 2.9.3** (Standalone)
-- **Docker** (para orquestração do PostgreSQL)
-- **Docker Compose** (para facilitar a configuração dos serviços)
+- **Docker Compose** (para a orquestração dos containers)
 - **Dependências Python** (definidas no arquivo `requirements.txt`)
 
 ### Setup do Ambiente
